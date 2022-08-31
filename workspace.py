@@ -5,6 +5,7 @@ from nnfs.datasets import spiral
 from layer_dense import Layer_Dense
 from activation_relu import Activation_ReLU
 from activation_softmax import Activation_Softmax
+from loss_categorical_cross_entropy import Loss_CategoricalCrossentropy
 
 nnfs.init()
 #Create dataset
@@ -36,3 +37,19 @@ dense2.forward(activation1.output)
 activation2.forward(dense2.output)
 
 print(activation2.output[:5])
+
+loss_function = Loss_CategoricalCrossentropy()
+print(y)
+loss = loss_function.calculate(activation2.output,y)
+print("Loss:",loss)
+
+##Calculate the accuracy from output of activation2 and targets
+# calculate the values across the first axis (rows)
+predictions = np.argmax(activation2.output,axis=1)
+
+if len(y.shape) == 2:
+    y = np.argmax(y, axis=1)
+
+accuracy = np.mean(predictions == y)
+
+print("Accuracy: ",accuracy)
