@@ -1,29 +1,48 @@
 import numpy as np
 from loss import Loss
+
+
 class Loss_CategoricalCrossentropy(Loss):
 
-    #Forward pass
+    # Forward pass
     def forward(self, y_pred, y_true):
 
         # Number of samples in a batch
         samples = len(y_pred)
 
-        #clip data to prevent division by 0
-        #clip both sides to not drag mean towards any value
-        y_pred_clip = np.clip(y_pred,1e-7,1 - 1e-7)
+        # clip data to prevent division by 0
+        # clip both sides to not drag mean towards any value
+        y_pred_clip = np.clip(y_pred, 1e-7, 1 - 1e-7)
 
         # Probabilities for target values -
         # only if categorical labels
         if len(y_true.shape) == 1:
-            correct_confidences = y_pred_clip[range(samples),y_true]
-        
+            correct_confidences = y_pred_clip[range(samples), y_true]
+
         elif len(y_true.shape) == 2:
             correct_confidences = np.sum(
                 y_pred_clip*y_true,
                 axis=1
             )
-        
-        #Losses
+
+        # Losses
         negative_log_likelihoods = -np.log(correct_confidences)
-        
+
         return negative_log_likelihoods
+
+    def backward(self, dvalues, y_true):
+
+        # Number of samples
+        samples = len(dvalues)
+
+        # Number of labels in every sample
+        # we'll use the first sample to count them
+        labels = len(dvalues[0])
+
+        # If labels are sparse, turn them into a one-hot vector
+        if len(y_true.shape) == 1:
+            y_true = np.eye(labels)[y_true]
+        # Calculate gradient
+        self.dinputs = -y_true/dvalues
+        # normalize gradient
+        self.dinputs = self.dinputs/samples
