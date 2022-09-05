@@ -8,6 +8,9 @@ from activation_softmax import Activation_Softmax
 from loss_categorical_cross_entropy import Loss_CategoricalCrossentropy
 from activation_softmax_loss_cross_entropy import Activation_Softmax_Loss_CategoricalCrossentropy
 from sgd_optimizer import Optimizer_SGD
+from adagrad_optimizer import Optimizer_Adagrad
+from rms_prop_optimizer import Optimizer_RMSprop
+from adam_optimizer import Optimizer_Adam
 
 nnfs.init()
 # Create dataset
@@ -26,7 +29,7 @@ dense2 = Layer_Dense(64, 3)
 loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
 
 # Create Optimizer
-optimizer = Optimizer_SGD(decay=1e-3)
+optimizer = Optimizer_Adam(learning_rate=.05, decay=5e-7)
 
 for epoch in range(10001):
     # Forward pass
