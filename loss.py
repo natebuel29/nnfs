@@ -3,14 +3,15 @@ import numpy as np
 
 class Loss:
 
-    # Calculate the data and regularization losses
+    # Calculates the data and regularization losses
     # given model output and ground truth values
     def calculate(self, output, y):
 
-        # calculate sample loses
+        # Calculate sample losses
         sample_losses = self.forward(output, y)
 
-        # calculate the mean loss
+        # Calculate mean loss
         data_loss = np.mean(sample_losses)
 
+        # Return loss
         return data_loss

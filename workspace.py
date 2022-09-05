@@ -6,7 +6,7 @@ from layer_dense import Layer_Dense
 from activation_relu import Activation_ReLU
 from activation_softmax import Activation_Softmax
 from loss_categorical_cross_entropy import Loss_CategoricalCrossentropy
-from activation_softmax_loss_cross_entropy import Activation_Softmax_Loss_categoricalCrossentropy
+from activation_softmax_loss_cross_entropy import Activation_Softmax_Loss_CategoricalCrossentropy
 
 nnfs.init()
 # Create dataset
@@ -22,7 +22,7 @@ activation1 = Activation_ReLU()
 dense2 = Layer_Dense(3, 3)
 
 # Create softmax classifier's combined loss and activation
-loss_activation = Activation_Softmax_Loss_categoricalCrossentropy()
+loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
 
 # Perform a forward pass of our training data through this layer
 dense1.forward(X)
@@ -39,7 +39,7 @@ print("Loss:", loss)
 
 # Calculate the accuracy from output of activation2 and targets
 # calculate the values across the first axis (rows)
-predictions = np.argmax(loss_activation.outputs, axis=1)
+predictions = np.argmax(loss_activation.output, axis=1)
 
 if len(y.shape) == 2:
     y = np.argmax(y, axis=1)
@@ -49,7 +49,7 @@ accuracy = np.mean(predictions == y)
 print("Accuracy: ", accuracy)
 
 # backward pass
-loss_activation.backward(loss_activation.outputs, y)
+loss_activation.backward(loss_activation.output, y)
 dense2.backward(loss_activation.dinputs)
 activation1.backward(dense2.dinputs)
 dense1.backward(activation1.dinputs)
