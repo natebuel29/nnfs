@@ -15,3 +15,25 @@ class Loss:
 
         # Return loss
         return data_loss
+
+    # Regularization loss calculation
+    def regularization_loss(self, layer):
+        regularization_loss = 0
+
+        if layer.weight_regularizer_L1 > 0:
+            regularization_loss += layer.weight_regularizer_L1 * \
+                np.sum(np.abs(layer.weights))
+
+        if layer.weight_regularizer_L2 > 0:
+            regularization_loss += layer.weight_regularizer_L2 * \
+                np.sum(np.abs(layer.weights))
+
+        if layer.bias_regularizer_L1 > 0:
+            regularization_loss += layer.bias_regularizer_L1 * \
+                np.sum(np.abs(layer.weights))
+
+        if layer.bias_regularizer_L2 > 0:
+            regularization_loss += layer.bias_regularizer_L2 * \
+                np.sum(np.abs(layer.weights))
+
+        return regularization_loss
