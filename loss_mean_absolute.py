@@ -5,7 +5,7 @@ from loss import Loss
 class Loss_MeanAbsoluteError(Loss):
 
     def forward(self, y_pred, y_true):
-        sample_losses = np.mean(np.abs(y_true - y_pred), axis=1)
+        sample_losses = np.mean(np.abs(y_true - y_pred), axis=-1)
         return sample_losses
 
     def backward(self, dvalues, y_true):

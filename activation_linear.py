@@ -3,7 +3,10 @@ import numpy as np
 
 class Activation_Linear:
 
-    def forward(self, inputs):
+    def predictions(self, outputs):
+        return outputs
+
+    def forward(self, inputs, training):
         self.inputs = inputs
         self.output = inputs
 

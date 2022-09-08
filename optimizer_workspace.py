@@ -77,7 +77,7 @@ for epoch in range(10001):
 # Validate the model
 
 # Create test dataset
-X_test, y_test = spiral.create_data(samples=100, classes=2)
+X_test, y_test = spiral.create_data(samples=100, classes=3)
 
 dense1.forward(X_test)
 activation1.forward(dense1.output)

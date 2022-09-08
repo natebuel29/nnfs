@@ -2,7 +2,11 @@ import numpy as np
 
 
 class Activation_Sigmoid:
-    def forward(self, inputs):
+
+    def predictions(self, outputs):
+        return (outputs > 0.5) * 1
+
+    def forward(self, inputs, training):
         self.inputs = inputs
         self.output = 1/(1+np.exp(-inputs))
 

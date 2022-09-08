@@ -3,8 +3,11 @@ import numpy as np
 
 class Activation_ReLU:
 
+    def predictions(self, outputs):
+        return outputs
+
     # Forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
 
         # Remember input values
         self.inputs = inputs

@@ -3,8 +3,11 @@ import numpy as np
 
 class Activation_Softmax:
 
+    def predictions(self, outputs):
+        return np.argmax(outputs, axis=1)
+
     # Forward pass
-    def forward(self, inputs):
+    def forward(self, inputs, training):
         # Remember input values
         self.inputs = inputs
 

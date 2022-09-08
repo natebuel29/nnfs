@@ -16,8 +16,8 @@ from adagrad_optimizer import Optimizer_Adagrad
 from rms_prop_optimizer import Optimizer_RMSprop
 from adam_optimizer import Optimizer_Adam
 from layer_dropout import Layer_Dropout
-nnfs.init()
 
+nnfs.init()
 
 # Create dataset
 X, y = sine_data()
