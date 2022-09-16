@@ -3,6 +3,8 @@ from layer_input import Layer_Input
 from activation_softmax import Activation_Softmax
 from loss_categorical_cross_entropy import Loss_CategoricalCrossentropy
 from activation_softmax_loss_cross_entropy import Activation_Softmax_Loss_CategoricalCrossentropy
+import pickle
+import copy
 
 
 class Model:
@@ -15,6 +17,29 @@ class Model:
     # Add Objects to the model
     def add(self, layer):
         self.layers.append(layer)
+
+    def save(self, path):
+        model = copy.deepcopy(self)
+        model.loss.new_pass()
+        model.accuracy.new_pass()
+
+        model.input_layer.__dict__.pop('output', None)
+        model.loss.__dict__.pop('dinputs', None)
+
+        for layer in model.layers:
+            for property in ['inputs', 'output', 'dinputs', 'dweights', 'dbiases']:
+                layer.__dict__.pop(property, None)
+
+        with open(path, 'wb') as f:
+            pickle.dump(model, f)
+
+    @staticmethod
+    def load(path):
+
+        with open(path, 'rb') as f:
+            model = pickle.load(f)
+
+        return model
 
     # Performs backward pass
     def backward(self, output, y):
@@ -83,8 +108,8 @@ class Model:
 
             if hasattr(self.layers[i], 'weights'):
                 self.trainable_layers.append(self.layers[i])
-
-        self.loss.remember_trainable_layers(self.trainable_layers)
+        if self.loss is not None:
+            self.loss.remember_trainable_layers(self.trainable_layers)
 
         # If output activation is Softmax and loss is Categorical Cross-Entropy
         # Create an object of combined activation and loss function containing faster gradient calculation
@@ -105,10 +130,13 @@ class Model:
         # layer is now the lats object from the list, return its output
         return layer.output
 
-    def set(self, *, loss, optimizer, accuracy):
-        self.loss = loss
-        self.optimizer = optimizer
-        self.accuracy = accuracy
+    def set(self, *, loss=None, optimizer=None, accuracy=None):
+        if loss is not None:
+            self.loss = loss
+        if optimizer is not None:
+            self.optimizer = optimizer
+        if accuracy is not None:
+            self.accuracy = accuracy
 
    # Train the model
     def train(self, X, y, *, epochs=1, batch_size=None,
@@ -120,14 +148,6 @@ class Model:
         # Default value if batch size is not being set
         train_steps = 1
 
-        # If there is validation data passed,
-        # set default number of steps for validation as well
-        if validation_data is not None:
-            validation_steps = 1
-
-            # For better readability
-            X_val, y_val = validation_data
-
         # Calculate number of steps
         if batch_size is not None:
             train_steps = len(X) // batch_size
@@ -136,15 +156,6 @@ class Model:
             # Add `1` to include this not full batch
             if train_steps * batch_size < len(X):
                 train_steps += 1
-
-            if validation_data is not None:
-                validation_steps = len(X_val) // batch_size
-
-                # Dividing rounds down. If there are some remaining
-                # data but nor full batch, this won't include it
-                # Add `1` to include this not full batch
-                if validation_steps * batch_size < len(X_val):
-                    validation_steps += 1
 
         # Main training loop
         for epoch in range(1, epochs+1):
@@ -220,45 +231,111 @@ class Model:
             # If there is the validation data
             if validation_data is not None:
 
-                # Reset accumulated values in loss
-                # and accuracy objects
-                self.loss.new_pass()
-                self.accuracy.new_pass()
+                # Evaluate the model:
+                self.evaluate(*validation_data,
+                              batch_size=batch_size)
 
-                # Iterate over steps
-                for step in range(validation_steps):
+    # Evaluates the model using passed-in dataset
+    def evaluate(self, X_val, y_val, *, batch_size=None):
 
-                    # If batch size is not set -
-                    # train using one step and full dataset
-                    if batch_size is None:
-                        batch_X = X_val
-                        batch_y = y_val
+        # Default value if batch size is not being set
+        validation_steps = 1
 
-                    # Otherwise slice a batch
-                    else:
-                        batch_X = X_val[
-                            step*batch_size:(step+1)*batch_size
-                        ]
-                        batch_y = y_val[
-                            step*batch_size:(step+1)*batch_size
-                        ]
+        # Calculate number of steps
+        if batch_size is not None:
+            validation_steps = len(X_val) // batch_size
+            # Dividing rounds down. If there are some remaining
+            # data but not a full batch, this won't include it
+            # Add `1` to include this not full batch
+            if validation_steps * batch_size < len(X_val):
+                validation_steps += 1
 
-                    # Perform the forward pass
-                    output = self.forward(batch_X, training=False)
+        # Reset accumulated values in loss
+        # and accuracy objects
+        self.loss.new_pass()
+        self.accuracy.new_pass()
 
-                    # Calculate the loss
-                    self.loss.calculate(output, batch_y)
+        # Iterate over steps
+        for step in range(validation_steps):
 
-                    # Get predictions and calculate an accuracy
-                    predictions = self.output_layer_activation.predictions(
-                        output)
-                    self.accuracy.calculate(predictions, batch_y)
+            # If batch size is not set -
+            # train using one step and full dataset
+            if batch_size is None:
+                batch_X = X_val
+                batch_y = y_val
 
-                # Get and print validation loss and accuracy
-                validation_loss = self.loss.calculate_accumulated()
-                validation_accuracy = self.accuracy.calculate_accumulated()
+            # Otherwise slice a batch
+            else:
+                batch_X = X_val[
+                    step*batch_size:(step+1)*batch_size
+                ]
+                batch_y = y_val[
+                    step*batch_size:(step+1)*batch_size
+                ]
 
-                # Print a summary
-                print(f'validation, ' +
-                      f'acc: {validation_accuracy:.3f}, ' +
-                      f'loss: {validation_loss:.3f}')
+            # Perform the forward pass
+            output = self.forward(batch_X, training=False)
+
+            # Calculate the loss
+            self.loss.calculate(output, batch_y)
+
+            # Get predictions and calculate an accuracy
+            predictions = self.output_layer_activation.predictions(
+                output)
+            self.accuracy.calculate(predictions, batch_y)
+
+        # Get and print validation loss and accuracy
+        validation_loss = self.loss.calculate_accumulated()
+        validation_accuracy = self.accuracy.calculate_accumulated()
+
+        # Print a summary
+        print(f'validation, ' +
+              f'acc: {validation_accuracy:.3f}, ' +
+              f'loss: {validation_loss:.3f}')
+
+    def predict(self, X, *, batch_size=None):
+
+        prediction_steps = 1
+
+        if batch_size is not None:
+            prediction_steps = len(X)
+
+            if prediction_steps * batch_size < len(X):
+                prediction_steps += 1
+
+        output = []
+
+        for step in range(prediction_steps):
+            if batch_size is None:
+                batch_X = X
+            else:
+                batch_X = X[step*batch_size:(step+1)*batch_size]
+
+            batch_output = self.forward(batch_X, training=False)
+            output.append(batch_output)
+
+        return np.vstack(output)
+
+    def get_parameters(self):
+
+        parameters = []
+
+        for layer in self.trainable_layers:
+            parameters.append(layer.get_parameters())
+
+        return parameters
+
+    def set_parameters(self, parameters):
+
+        for parameter_set, layer in zip(parameters, self.trainable_layers):
+            layer.set_parameters(*parameter_set)
+
+    def save_parameters(self, path):
+
+        with open(path, 'wb') as f:
+            pickle.dump(self.get_parameters(), f)
+
+    def load_parameters(self, path):
+
+        with open(path, 'rb') as f:
+            self.set_parameters(pickle.load(f))

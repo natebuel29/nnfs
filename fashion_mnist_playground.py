@@ -25,7 +25,7 @@ from model import Model
 
 # URL = 'https://nnfs.io/datasets/fashion_mnist_images.zip'
 # FILE = 'fashion_mnist_images.zip'
-FOLDER = 'fashion_mnist_images'
+# FOLDER = 'fashion_mnist_images'
 
 # if not os.path.isfile(FILE):
 #     print(f"Downloading {URL} and saving as {FILE}...")
@@ -61,30 +61,41 @@ def load_mnist_dataset(dataset, path):
     return np.array(X), np.array(y).astype('uint8')
 
 
-X, y, X_test, y_test = create_data_mnist("fashion_mnist_images")
+fashion_mnist_labels = {
+    0: 'T-shirt/top',
+    1: 'Trouser',
+    2: 'Pullover',
+    3: 'Dress',
+    4: 'Coat',
+    5: 'Sandal',
+    6: 'Shirt',
+    7: 'Sneaker',
+    8: 'Bag',
+    9: 'Ankle boot'
+}
 
-# Scale and reshape samples
-X = (X.reshape(X.shape[0], -1).astype(np.float32) - 127.5) / 127.5
-X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) -
-          127.5) / 127.5
-keys = np.array(range(X.shape[0]))
-np.random.shuffle(keys)
+# Read an image
+image_data = cv2.imread('pants.png', cv2.IMREAD_GRAYSCALE)
 
-X = X[keys]
-y = y[keys]
+# Resize to the same size as Fashion MNIST images
+image_data = cv2.resize(image_data, (28, 28))
 
-model = Model()
+# Invert image colors
+image_data = 255 - image_data
 
-model.add(Layer_Dense(X.shape[1], 128))
-model.add(Activation_ReLU())
-model.add(Layer_Dense(128, 128))
-model.add(Activation_ReLU())
-model.add(Layer_Dense(128, 10))
-model.add(Activation_Softmax())
+# Reshape and scale pixel data
+image_data = (image_data.reshape(1, -1).astype(np.float32) - 127.5) / 127.5
 
-model.set(loss=Loss_CategoricalCrossentropy(),
-          optimizer=Optimizer_Adam(decay=1e-3), accuracy=Accuracy_Categorical())
+# Load the model
+model = Model.load('fashion_mnist.model')
 
-model.finalize()
-model.train(X, y, validation_data=(X_test, y_test),
-            epochs=15, batch_size=128, print_every=100)
+# Predict on the image
+confidences = model.predict(image_data)
+
+# Get prediction instead of confidence levels
+predictions = model.output_layer_activation.predictions(confidences)
+
+# Get label name from label index
+prediction = fashion_mnist_labels[predictions[0]]
+
+print(prediction)
